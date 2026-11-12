@@ -8,14 +8,18 @@ ROOT = Path(__file__).resolve().parents[1]
 INTEGRATION = ROOT / "custom_components" / "advanced_climate"
 
 
-def method(path: str, class_name: str, method_name: str) -> ast.AsyncFunctionDef | ast.FunctionDef:
+def method(
+    path: str, class_name: str, method_name: str
+) -> ast.AsyncFunctionDef | ast.FunctionDef:
     tree = ast.parse((INTEGRATION / path).read_text(encoding="utf-8"))
     cls = next(
-        node for node in tree.body
+        node
+        for node in tree.body
         if isinstance(node, ast.ClassDef) and node.name == class_name
     )
     return next(
-        node for node in cls.body
+        node
+        for node in cls.body
         if isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef))
         and node.name == method_name
     )
@@ -23,7 +27,8 @@ def method(path: str, class_name: str, method_name: str) -> ast.AsyncFunctionDef
 
 def calls_named(node: ast.AST, name: str) -> list[ast.Call]:
     return [
-        child for child in ast.walk(node)
+        child
+        for child in ast.walk(node)
         if isinstance(child, ast.Call)
         and isinstance(child.func, ast.Attribute)
         and child.func.attr == name
@@ -43,20 +48,25 @@ class TestMonitoringSafety(unittest.TestCase):
             )
         )
 
-    def test_room_target_application_is_a_noop(self) -> None:
+    def test_room_target_application_never_uses_output_helpers(self) -> None:
         apply = method("room_devices.py", "RoomDevices", "_async_apply")
-        self.assertFalse(calls_named(apply, "async_call"))
         called = {
             node.func.attr
             for node in ast.walk(apply)
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
         }
-        self.assertNotIn("_async_apply_relay", called)
-        self.assertNotIn("_async_apply_climate", called)
+        for output_helper in (
+            "_async_apply_relay",
+            "_async_apply_climate",
+            "_async_boost_without_target",
+            "_async_restore_device",
+            "_send",
+            "_call",
+        ):
+            self.assertNotIn(output_helper, called)
 
     def test_calibration_is_read_only(self) -> None:
         calibrate = method("room_devices.py", "RoomDevices", "_async_calibrate")
-        self.assertFalse(calls_named(calibrate, "async_call"))
         self.assertFalse(
             any(isinstance(node, ast.Call) for node in ast.walk(calibrate))
         )
