@@ -1267,8 +1267,8 @@ class House:
         )
 
         configured, source_on = self.heat_source_state()
-        running = bool(source_on) if configured else any(
-            room.heating for room in self.rooms.values()
+        running = (
+            bool(source_on) if configured else any(room.heating for room in self.rooms.values())
         )
         self._check_source_available(now, configured, source_on)
         if self._source_running_since is not None:
