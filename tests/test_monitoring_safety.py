@@ -8,20 +8,15 @@ ROOT = Path(__file__).resolve().parents[1]
 INTEGRATION = ROOT / "custom_components" / "advanced_climate"
 
 
-def method(
-    path: str, class_name: str, method_name: str
-) -> ast.AsyncFunctionDef | ast.FunctionDef:
+def method(path: str, class_name: str, method_name: str) -> ast.AsyncFunctionDef | ast.FunctionDef:
     tree = ast.parse((INTEGRATION / path).read_text(encoding="utf-8"))
     cls = next(
-        node
-        for node in tree.body
-        if isinstance(node, ast.ClassDef) and node.name == class_name
+        node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == class_name
     )
     return next(
         node
         for node in cls.body
-        if isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef))
-        and node.name == method_name
+        if isinstance(node, (ast.AsyncFunctionDef, ast.FunctionDef)) and node.name == method_name
     )
 
 
@@ -67,9 +62,7 @@ class TestMonitoringSafety(unittest.TestCase):
 
     def test_calibration_is_read_only(self) -> None:
         calibrate = method("room_devices.py", "RoomDevices", "_async_calibrate")
-        self.assertFalse(
-            any(isinstance(node, ast.Call) for node in ast.walk(calibrate))
-        )
+        self.assertFalse(any(isinstance(node, ast.Call) for node in ast.walk(calibrate)))
 
     def test_boiler_method_only_calculates_and_observes(self) -> None:
         boiler = method("house.py", "House", "_async_control_boiler")
@@ -87,16 +80,9 @@ class TestMonitoringSafety(unittest.TestCase):
 
     def test_any_available_demand_entity_means_demand(self) -> None:
         actual = method("room_devices.py", "RoomDevices", "_relay_actual")
-        returns = [
-            node.value
-            for node in ast.walk(actual)
-            if isinstance(node, ast.Return)
-        ]
+        returns = [node.value for node in ast.walk(actual) if isinstance(node, ast.Return)]
         self.assertTrue(
-            any(
-                isinstance(value, ast.Constant) and value.value is True
-                for value in returns
-            )
+            any(isinstance(value, ast.Constant) and value.value is True for value in returns)
         )
         self.assertTrue(
             any(
