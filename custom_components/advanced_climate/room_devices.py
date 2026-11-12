@@ -660,13 +660,17 @@ class RoomDevices:
         return False
 
     def _relay_actual(self) -> bool | None:
-        """True when a relay (or on / off thermostat) is on now."""
+        """Return True when any configured demand entity is available.
+
+        For monitoring, availability is the demand signal: both on and off
+        are meaningful/active states; unknown and unavailable mean no demand.
+        """
         entities = self.switches if self.source == SOURCE_SWITCH else self.climates
         states = [self.hass.states.get(eid) for eid in entities]
         usable = [s for s in states if valid(s)]
         if not usable:
             return None
-        return any(s.state not in (STATE_OFF,) for s in usable)  # type: ignore[union-attr]
+        return True
 
     def _schedule_verify(self, target: Target) -> None:
         """Check later that the devices accepted the command; retry once, then alert."""
