@@ -62,8 +62,6 @@ from .room_common import (
 )
 from .util import (
     as_list,
-    climate_temp,
-    delta_from_celsius,
     float_attr,
     from_celsius,
     heat_mode,
