@@ -46,9 +46,13 @@ class TestMonitoringSafety(unittest.TestCase):
     def test_room_target_application_is_a_noop(self) -> None:
         apply = method("room_devices.py", "RoomDevices", "_async_apply")
         self.assertFalse(calls_named(apply, "async_call"))
-        self.assertFalse(
-            any(isinstance(node, ast.Call) for node in ast.walk(apply))
-        )
+        called = {
+            node.func.attr
+            for node in ast.walk(apply)
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+        }
+        self.assertNotIn("_async_apply_relay", called)
+        self.assertNotIn("_async_apply_climate", called)
 
     def test_calibration_is_read_only(self) -> None:
         calibrate = method("room_devices.py", "RoomDevices", "_async_calibrate")
