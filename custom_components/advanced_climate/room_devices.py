@@ -106,8 +106,24 @@ class RoomDevices:
         return False
 
     async def _async_apply(self, target: Target, *, force: bool = False) -> None:
-        """Monitoring mode: observe devices; never apply a target."""
-        return
+        """Update simulated TRV demand without sending any device commands."""
+        if not self._boost_capable:
+            return
+        if target.kind in (KIND_NONE, KIND_OFF):
+            self._boost_demand = False
+            return
+
+        temperature = self._resolve_temperature(target)
+        if self.boost:
+            self._boost_demand = self._boost_wanted(temperature)
+        elif (
+            self._frost_boost_possible()
+            and temperature is not None
+            and temperature <= self.frost_temp() + 1e-9
+        ):
+            self._boost_demand = self._frost_wanted(temperature)
+        else:
+            self._boost_demand = False
 
     @property
     def boost_active(self) -> bool:
