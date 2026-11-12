@@ -1,4 +1,4 @@
-"""Smart Heating Control: heating schedules by presence, zones, windows and weather."""
+"""Smart Heating Monitor: read-only room heating analysis and thermal learning."""
 
 from __future__ import annotations
 
@@ -74,7 +74,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: AdvancedClimateConfigEnt
             config_entry_id=entry.entry_id,
             identifiers={(DOMAIN, entry.entry_id)},
             name=entry.title,
-            manufacturer="Smart Heating Control",
+            manufacturer="Smart Heating Monitor",
             model="House",
             entry_type=dr.DeviceEntryType.SERVICE,
         )
