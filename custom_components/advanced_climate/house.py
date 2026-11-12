@@ -1254,45 +1254,28 @@ class House:
     # Boiler / heat demand
     # ------------------------------------------------------------------
     async def _async_control_boiler(self, now: datetime) -> None:
-        """Switch the boiler from the heat demand of the rooms, with minimum on / off times."""
-        opts = self.options
-        # Only the rooms that heat from the heat source of the house start it.
+        """Calculate house heat demand and runtime without controlling the source."""
         sourced = {rid: room for rid, room in self.rooms.items() if room.uses_house_source}
-        reference = opts.get(CONF_REFERENCE_ROOM)
+        reference = self.options.get(CONF_REFERENCE_ROOM)
         if reference not in sourced:
             reference = None
-        needed = max(1, int(opts[CONF_BOILER_MIN_ROOMS]))
+        needed = max(1, int(self.options[CONF_BOILER_MIN_ROOMS]))
         if reference:
             demand = sourced[reference].heat_demand
         else:
             count = sum(1 for room in sourced.values() if room.heat_demand)
             demand = count >= needed if sourced else False
-        # More rooms needed than the house has (rooms were removed): the heat
-        # source would start only for frost protection.
-        if opts.get(CONF_BOILER_ENTITY) and not reference and needed > len(sourced):
-            self.notify(
-                "boiler_min_rooms",
-                f"Rooms needed to start the heat source is {needed}, but the house has "
-                f"{len(sourced)} rooms that heat from it: the heat source starts only for "
-                "frost protection.",
-                code="boiler_min_rooms",
-                params={"needed": needed, "rooms": len(sourced)},
-            )
-        else:
-            self.clear_alert("boiler_min_rooms")
-        # Frost protection of any room starts the heat source on its own (no
-        # rooms needed, no reference room, also while paused).
+
         frost = any(room.frost_demand for room in sourced.values())
         demand = demand or frost
-        # The house asks for heat also when a room with its own heat does; only
-        # ``demand`` (the rooms of the heat source) switches the heat source.
         self.heat_demand = demand or any(
             room.heat_demand for room in self.rooms.values() if not room.uses_house_source
         )
-        # Heating time of the house: while the heat source runs (its real state),
-        # without one while at least one room heats.
+
         configured, source_on = self.heat_source_state()
-        running = bool(source_on) if configured else any(r.heating for r in self.rooms.values())
+        running = bool(source_on) if configured else any(
+            room.heating for room in self.rooms.values()
+        )
         self._check_source_available(now, configured, source_on)
         if self._source_running_since is not None:
             self.boiler_runtime_s += (now - self._source_running_since).total_seconds()
@@ -1300,87 +1283,10 @@ class House:
         if running:
             self._source_running_since = now
 
+        # No service calls in monitoring mode: the source's actual state is
+        # observed by heat_source_state() and used for runtime accounting.
         self.source_waiting = None
         self._source_wait_until = None
-        # Monitoring fork: keep calculating real source state and runtime above,
-        # but never start, stop, or adjust the configured boiler.
-        return
-        boiler = opts.get(CONF_BOILER_ENTITY)
-        if not boiler:
-            return
-        want = demand
-        if not self.paused:
-            # Frost protection of a pause is over once the pause ends.
-            self._frost_started = False
-        else:
-            # Paused: only frost protection; a heat source started for it is
-            # stopped again when it is no longer needed.
-            if frost:
-                want = True
-            elif self._frost_started:
-                want = False
-            else:
-                return
-        state = self.hass.states.get(boiler)
-        if not valid(state):
-            return
-        boost = self._source_boost(state)  # type: ignore[arg-type]
-        is_on = self._source_is_on(state, boost)  # type: ignore[arg-type]
-        if is_on == want and (boost is None or self._source_settled(state, boost, want)):  # type: ignore[arg-type]
-            return
-        # Only the stop temperature of a boosted source is taken back (it was
-        # changed by hand): not a start or a stop, no minimum time to wait for.
-        correction = is_on == want
-        if not correction and self.boiler_changed is not None:
-            minimum = timedelta(
-                minutes=float(opts[CONF_BOILER_MIN_ON] if is_on else opts[CONF_BOILER_MIN_OFF])
-            )
-            if now - self.boiler_changed < minimum:
-                self.source_waiting = "min_on" if is_on else "min_off"
-                self._source_wait_until = self.boiler_changed + minimum
-                return
-        context = self.new_context()
-        domain = boiler.split(".", 1)[0]
-        try:
-            if domain == "climate" and boost is not None:
-                # Boosted: always in its heat mode, at the maximum of the house
-                # to start, at the frost protection of the house to stop.
-                on_mode = heat_mode(state.attributes.get("hvac_modes"))  # type: ignore[union-attr]
-                await self.hass.services.async_call(
-                    "climate",
-                    "set_temperature",
-                    {
-                        "entity_id": boiler,
-                        "temperature": boost[0] if want else boost[1],
-                        "hvac_mode": on_mode,
-                    },
-                    blocking=True,
-                    context=context,
-                )
-            elif domain == "climate":
-                on_mode = heat_mode(state.attributes.get("hvac_modes"))  # type: ignore[union-attr]
-                await self.hass.services.async_call(
-                    "climate",
-                    "set_hvac_mode",
-                    {"entity_id": boiler, "hvac_mode": on_mode if want else "off"},
-                    blocking=True,
-                    context=context,
-                )
-            else:
-                await self.hass.services.async_call(
-                    domain,
-                    SERVICE_TURN_ON if want else SERVICE_TURN_OFF,
-                    {"entity_id": boiler},
-                    blocking=True,
-                    context=context,
-                )
-        except (HomeAssistantError, ValueError) as err:
-            _LOGGER.warning("Could not switch the boiler %s: %s", boiler, err)
-            return
-        self.boiler_on = want
-        if not correction:
-            self.boiler_changed = now
-            self._frost_started = bool(want and self.paused)
 
     def _update_keep_open(self) -> bool:
         """Monitoring mode: do not request TRVs or valves to stay open."""
