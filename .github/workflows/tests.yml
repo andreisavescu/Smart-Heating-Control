@@ -62,7 +62,7 @@ jobs:
           # The newest tested version (requirements_test.txt).
           - name: newest
             requirements: -r requirements_test.txt
-            # Coverage measured once, on the newest version: at least 93 % (the level reached).
+            # Coverage is reported on the newest version; the old control-only tests are excluded.
             coverage: "--cov --cov-report=term-missing:skip-covered"
           # The minimum in hacs.json (Home Assistant 2026.6.0).
           - name: minimum (2026.6.0)
