@@ -22,7 +22,7 @@
   "documentation": "https://github.com/andreisavescu/Smart-Heating-Control",
   "integration_type": "hub",
   "iot_class": "calculated",
-  "issue_tracker": "https://github.com/sandreialexandru/Smart-Heating-Control/issues",
+  "issue_tracker": "https://github.com/andreisavescu/Smart-Heating-Control/issues",
   "requirements": [],
   "version": "0.1.0"
 }
