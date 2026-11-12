@@ -637,16 +637,9 @@ class Room(RoomDevices, RoomOverride, RoomOptimal, RoomAlerts, RoomStatus):
             else:
                 self.sent.confirm(entity_id, new, now)
         elif entity_id in self.switches:
-            if (
-                old is not None
-                and new is not None
-                and valid(old)
-                and valid(new)
-                and old.state != new.state
-                and not self.house.is_own_context(event.context)
-                and not self.sent.is_echo(entity_id, old, new, now)
-            ):
-                self._handle_manual_change(entity_id, new)
+            # In this fork a switch is a read-only heating-demand input.
+            # Its state changes must not be interpreted as manual overrides.
+            pass
         if entity_id in as_list(self.config.get(CONF_TEMP_SENSORS)) or entity_id in self.climates:
             self._update_temperature(now)
         self._update_window(now)
@@ -1276,6 +1269,12 @@ class Room(RoomDevices, RoomOverride, RoomOptimal, RoomAlerts, RoomStatus):
             # The valves are exercised, or kept open for the heat source: no heat is asked for.
             pass
         elif self.source == SOURCE_SWITCH or self.command_mode == COMMAND_HVAC:
+            # Read the configured relay/thermostat as an input, never command it.
+            actual = self._relay_actual()
+            if actual is None:
+                self._relay_on = None
+            else:
+                self._note_relay_state(actual, dt_util.utcnow())
             demand = bool(self._relay_on)
         elif self.boost:
             demand = self._boost_demand  # from the room sensor, with the hysteresis
