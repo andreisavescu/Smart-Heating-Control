@@ -1265,10 +1265,7 @@ class Room(RoomDevices, RoomOverride, RoomOptimal, RoomAlerts, RoomStatus):
     def _update_demand(self) -> None:
         """Whether the room asks for heat (hvac_action, else the hysteresis; relays: on)."""
         demand = False
-        if self._exercise_until is not None or self.kept_open:
-            # The valves are exercised, or kept open for the heat source: no heat is asked for.
-            pass
-        elif self.source == SOURCE_SWITCH or self.command_mode == COMMAND_HVAC:
+        if self.source == SOURCE_SWITCH or self.command_mode == COMMAND_HVAC:
             # Read the configured relay/thermostat as an input, never command it.
             actual = self._relay_actual()
             if actual is None:
