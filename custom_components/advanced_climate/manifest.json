@@ -1,6 +1,6 @@
 {
   "domain": "advanced_climate",
-  "name": "Smart Heating Control",
+  "name": "Smart Heating Monitor",
   "after_dependencies": [
     "calendar",
     "frontend",
@@ -16,13 +16,13 @@
     "climate.thermostats_heating"
   ],
   "codeowners": [
-    "@sandreialexandru"
+    "@andreisavescu"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/sandreialexandru/Smart-Heating-Control",
+  "documentation": "https://github.com/andreisavescu/Smart-Heating-Control",
   "integration_type": "hub",
   "iot_class": "calculated",
-  "issue_tracker": "https://github.com/sandreialexandru/Smart-Heating-Control/issues",
+  "issue_tracker": "https://github.com/andreisavescu/Smart-Heating-Control/issues",
   "requirements": [],
-  "version": "2.6.4"
+  "version": "0.1.0"
 }
