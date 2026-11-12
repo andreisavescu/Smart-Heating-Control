@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Smart Heating Control",
+        "title": "Smart Heating Monitor",
         "description": "Creează casa. Camerele se adaugă apoi cu „Adaugă cameră”; restul opțiunilor sunt în opțiunile integrării.",
         "data": {
           "temperature_unit": "Unitatea de temperatură",
@@ -116,7 +116,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "Opțiuni Smart Heating Control",
+        "title": "Opțiuni Smart Heating Monitor",
         "menu_options": {
           "heating": "Încălzirea întregii case",
           "presence": "Prezență",
@@ -1150,7 +1150,7 @@
   },
   "exceptions": {
     "house_not_found": {
-      "message": "Nu există o casă Smart Heating Control cu id-ul {entry}."
+      "message": "Nu există o casă Smart Heating Monitor cu id-ul {entry}."
     },
     "house_ambiguous": {
       "message": "Sunt configurate mai multe case; dă config_entry_id."
@@ -1186,7 +1186,7 @@
   "issues": {
     "scenario_problem": {
       "title": "Scenariul {scenario} nu poate fi aplicat complet",
-      "description": "În casa {house}, scenariul **{scenario}** are camere care sunt sărite când e ales: {details}.\n\nReconfigurează scenariul (Setări → Dispozitive și servicii → Smart Heating Control) sau șterge-l. Mesajul dispare singur după ce problema e rezolvată."
+      "description": "În casa {house}, scenariul **{scenario}** are camere care sunt sărite când e ales: {details}.\n\nReconfigurează scenariul (Setări → Dispozitive și servicii → Smart Heating Monitor) sau șterge-l. Mesajul dispare singur după ce problema e rezolvată."
     }
   }
 }
