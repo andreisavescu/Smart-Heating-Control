@@ -13,8 +13,6 @@ from homeassistant.components.climate import ClimateEntityFeature
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     EVENT_HOMEASSISTANT_STARTED,
-    SERVICE_TURN_OFF,
-    SERVICE_TURN_ON,
     STATE_ON,
 )
 from homeassistant.core import (
@@ -46,8 +44,6 @@ from .const import (
     CONF_BOILER_BOOST,
     CONF_BOILER_ENTITY,
     CONF_BOILER_IDLE_TEMP,
-    CONF_BOILER_MIN_OFF,
-    CONF_BOILER_MIN_ON,
     CONF_BOILER_MIN_ROOMS,
     CONF_CALENDAR,
     CONF_COMP_BELOW,
@@ -135,7 +131,6 @@ from .util import (
     float_state,
     from_celsius,
     from_iso,
-    heat_mode,
     is_fahrenheit,
     iso,
     minutes_value,
