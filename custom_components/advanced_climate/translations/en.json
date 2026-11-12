@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Smart Heating Control",
+        "title": "Smart Heating Monitor",
         "description": "Create the house. Rooms are added afterwards with \"Add room\"; all other options are in the integration options.",
         "data": {
           "temperature_unit": "Temperature unit",
@@ -116,7 +116,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "Smart Heating Control options",
+        "title": "Smart Heating Monitor options",
         "menu_options": {
           "heating": "Heating of the whole house",
           "presence": "Presence",
@@ -1150,7 +1150,7 @@
   },
   "exceptions": {
     "house_not_found": {
-      "message": "No Smart Heating Control house with id {entry}."
+      "message": "No Smart Heating Monitor house with id {entry}."
     },
     "house_ambiguous": {
       "message": "Several houses are configured; give config_entry_id."
@@ -1186,7 +1186,7 @@
   "issues": {
     "scenario_problem": {
       "title": "Scenario {scenario} cannot be fully applied",
-      "description": "In the house {house}, the scenario **{scenario}** has rooms that are skipped when it is chosen: {details}.\n\nReconfigure the scenario (Settings → Devices & services → Smart Heating Control) or delete it. This message goes away by itself once it is fixed."
+      "description": "In the house {house}, the scenario **{scenario}** has rooms that are skipped when it is chosen: {details}.\n\nReconfigure the scenario (Settings → Devices & services → Smart Heating Monitor) or delete it. This message goes away by itself once it is fixed."
     }
   }
 }
