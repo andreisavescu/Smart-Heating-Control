@@ -24,7 +24,6 @@ from homeassistant.const import (
     STATE_ON,
 )
 from homeassistant.core import State
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import (
     entity_registry as er,
 )
@@ -32,21 +31,15 @@ from homeassistant.helpers.event import async_call_later
 from homeassistant.util import dt as dt_util
 
 from .const import (
-    CALIBRATION_EXTERNAL,
-    CALIBRATION_OFFSET,
-    CALIBRATION_REFRESH_MINUTES,
     COMMAND_HVAC,
     COMMAND_PRESET,
     COMMAND_TEMPERATURE,
-    CONF_CALIBRATION_ENTITIES,
-    CONF_CALIBRATION_MODE,
     CONF_HYSTERESIS,
     CONF_INERTIA_CONTROL,
     CONF_MIN_OFF,
     CONF_MIN_ON,
     CONF_TEMP_SENSORS,
     CONF_TRV_BOOST_TEMP,
-    CONF_VERIFY_COMMANDS,
     PRESET_NONE,
     PRESETS,
     RULE_OVERRIDE,
@@ -71,7 +64,6 @@ from .util import (
     as_list,
     climate_temp,
     delta_from_celsius,
-    finite,
     float_attr,
     from_celsius,
     heat_mode,
