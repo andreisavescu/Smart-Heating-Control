@@ -96,69 +96,18 @@ class RoomDevices:
     # Commands
     # ------------------------------------------------------------------
     async def _call(self, domain: str, service: str, data: dict[str, Any]) -> bool:
-        """Call a service with the context of the integration; False when it fails."""
-        try:
-            await self.hass.services.async_call(
-                domain, service, data, blocking=True, context=self.house.new_context()
-            )
-        except (HomeAssistantError, ValueError) as err:
-            _LOGGER.warning("Room %s: %s.%s failed: %s", self.name, domain, service, err)
-            return False
-        return True
+        """Monitoring fork: never issue device service calls."""
+        _LOGGER.debug(
+            "Monitoring mode: blocked device command %s.%s for %s",
+            domain,
+            service,
+            self.name,
+        )
+        return False
 
     async def _async_apply(self, target: Target, *, force: bool = False) -> None:
-        """Send the commands needed to reach ``target``."""
-        on_off = self.source == SOURCE_SWITCH or self.command_mode == COMMAND_HVAC
-        if target.kind == KIND_NONE:
-            # Nothing is sent (pause, no schedule) unless a manual change applies.
-            self.relay_waiting = None
-            self._relay_wait_until = None
-            if self.decision is None or self.decision.rule != RULE_OVERRIDE or not self.override:
-                await self._async_boost_without_target(target)
-                return
-            stored = self._override_target()
-            if stored is None:
-                await self._async_boost_without_target(target)
-                # Changed on the device: set again only after an interruption.
-                if self.override.get("interrupted"):
-                    self.override["interrupted"] = False
-                    for entity_id, values in (self.override.get("devices") or {}).items():
-                        if not await self._async_restore_device(entity_id, values):
-                            # The minimum on / off time runs: set again when it ends.
-                            self.override["interrupted"] = True
-                return
-            # Set by the card or a service: kept on the devices (relays regulate around it).
-            self.override["interrupted"] = False
-            target = stored
-        if self._boost_capable:
-            # The demand first, so the TRVs get the right temperature now. Kept
-            # open for the heat source the room asks for no heat (nor remembers
-            # it, so it does not go on asking once that ends).
-            heat = target.kind != KIND_OFF and self._exercise_until is None and not self.kept_open
-            temperature = self._resolve_temperature(target)
-            if self.boost:
-                self._boost_demand = heat and self._boost_wanted(temperature)
-            elif (
-                self._frost_boost_possible()
-                and temperature is not None
-                and temperature <= self.frost_temp() + 1e-9
-            ):
-                self._boost_demand = heat and self._frost_wanted(temperature)
-            else:
-                self._boost_demand = False
-        sent = False
-        if on_off:
-            sent = await self._async_apply_relay(target)
-        else:
-            for entity_id in self.climates:
-                sent |= await self._async_apply_climate(entity_id, target, force)
-        if self._boost_capable:
-            self._boosted = self._boost_demand
-            self._boost_base = (
-                None if target.kind == KIND_OFF else self._target_temperature_of(target)
-            )
-        if sent and self.house.options[CONF_VERIFY_COMMANDS]:
-            self._schedule_verify(target)
+        """Monitoring mode: observe devices; never apply a target."""
+        return
 
     @property
     def boost_active(self) -> bool:
@@ -796,61 +745,8 @@ class RoomDevices:
     # Calibration
     # ------------------------------------------------------------------
     async def _async_calibrate(self, now: datetime) -> None:
-        """Write the external temperature (or the offset) to the TRV calibration entities."""
-        mode = self.config[CONF_CALIBRATION_MODE]
-        if mode not in (CALIBRATION_OFFSET, CALIBRATION_EXTERNAL) or self.house.paused:
-            return
-        external = self.external_temperature()
-        if external is None:
-            return
-        entity_reg = er.async_get(self.hass)
-        for number_id in as_list(self.config.get(CONF_CALIBRATION_ENTITIES)):
-            number = self.hass.states.get(number_id)
-            if not valid(number):
-                continue
-            assert number is not None
-            last = self._calibration_written.get(number_id)
-            interval = timedelta(minutes=10 if mode == CALIBRATION_OFFSET else 5)
-            if last is not None and now - last < interval:
-                continue
-            step = float_attr(number, "step") or 0.1
-            minimum = float_attr(number, "min")
-            maximum = float_attr(number, "max")
-            if (current := finite(number.state)) is None:
-                continue  # not a number: this entity is skipped
-            # The TRV number has its own unit (usually °C).
-            number_unit = number.attributes.get("unit_of_measurement") or system_unit(self.hass)
-            if mode == CALIBRATION_EXTERNAL:
-                value = float(from_celsius(external, number_unit))
-            else:
-                climate_id = self._climate_on_same_device(entity_reg, number_id)
-                device_temp = (
-                    climate_temp(self.hass, self.hass.states.get(climate_id), "current_temperature")
-                    if climate_id
-                    else None
-                )
-                if device_temp is None:
-                    continue
-                value = current + float(delta_from_celsius(external - device_temp, number_unit))
-            value = round(round(value / step) * step, 2)
-            if minimum is not None:
-                value = max(minimum, value)
-            if maximum is not None:
-                value = min(maximum, value)
-            # A change smaller than a step (or 0.1) is not sent, with a small
-            # tolerance: in floating point 19.7 − 19.6 is 0.0999999… In the
-            # external temperature mode the value is sent again at least every
-            # CALIBRATION_REFRESH_MINUTES even when unchanged: some TRVs (Sonoff
-            # TRVZB: after about 2 hours) go back to their own sensor when no
-            # value comes.
-            small = abs(value - current) < max(step, 0.1) - 1e-6
-            refresh_due = mode == CALIBRATION_EXTERNAL and (
-                last is None or now - last >= timedelta(minutes=CALIBRATION_REFRESH_MINUTES)
-            )
-            if small and not refresh_due:
-                continue
-            if await self._call("number", "set_value", {ATTR_ENTITY_ID: number_id, "value": value}):
-                self._calibration_written[number_id] = now
+        """Monitoring mode: calibration entities are inputs only, never written."""
+        return
 
     def _climate_on_same_device(self, registry: er.EntityRegistry, entity_id: str) -> str | None:
         """Thermostat on the same device as a calibration entity."""
