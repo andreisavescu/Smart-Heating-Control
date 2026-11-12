@@ -16,7 +16,7 @@ This integration is for observation and analysis only.
 - **Never** starts, stops or adjusts the boiler.
 - **Never** writes TRV calibration values.
 
-The original configuration options and entities are retained for compatibility with the upstream architecture. Options that would cause device control are informational only in this fork. Do not install this alongside the original integration using the same `advanced_climate` domain.
+For room-demand inputs, **availability is the signal**: any valid state (including `on` or `off`) means demand; `unknown` or `unavailable` means no demand. The original configuration options and entities are retained for compatibility with the upstream architecture. Options that would cause device control are informational only in this fork. Do not install this alongside the original integration using the same `advanced_climate` domain.
 
 ## Install with HACS
 
