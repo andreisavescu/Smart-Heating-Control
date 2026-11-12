@@ -1302,6 +1302,9 @@ class House:
 
         self.source_waiting = None
         self._source_wait_until = None
+        # Monitoring fork: keep calculating real source state and runtime above,
+        # but never start, stop, or adjust the configured boiler.
+        return
         boiler = opts.get(CONF_BOILER_ENTITY)
         if not boiler:
             return
@@ -1380,47 +1383,11 @@ class House:
             self._frost_started = bool(want and self.paused)
 
     def _update_keep_open(self) -> bool:
-        """Choose, keep or end the room whose TRVs stay open for the heat source.
-
-        When no room asks for heat any more, the last room that asked (the one
-        furthest below its target when several stopped together) keeps its TRVs
-        open, so the heat left in the source has a way through. It ends when
-        another room asks for heat, when a stronger rule takes the room (window,
-        manual change, pause, mode, warm outside...), or when the room itself is
-        cold enough to ask for heat again. True when the room changed.
-        """
+        """Monitoring mode: do not request TRVs or valves to stay open."""
         previous = self.keep_open_room
-        enabled = bool(self.options.get(CONF_KEEP_LAST_OPEN)) and bool(
-            self.options.get(CONF_BOILER_ENTITY)
-        )
-        sourced = [room for room in self.rooms.values() if room.uses_house_source]
-        asking = [room for room in sourced if room.heat_demand and room.id != previous]
-        askers = [room.id for room in asking if room.can_keep_open]
-        if not enabled:
-            self.keep_open_room = None
-            self._last_askers = []
-            return previous is not None
-        held = self.rooms.get(previous) if previous else None
-        if previous is not None:
-            if held is None or asking or not held.kept_open or held.keep_open_needs_heat:
-                self.keep_open_room = None
-                self._last_askers = askers
-                return True
-            return False
-        if asking:
-            self._last_askers = askers
-            return False
-        candidates = [self.rooms[rid] for rid in self._last_askers if rid in self.rooms]
+        self.keep_open_room = None
         self._last_askers = []
-        if not candidates:
-            return False
-
-        def below(room: Room) -> float:
-            gap = room.temperature_gap()
-            return float("-inf") if gap is None else gap
-
-        self.keep_open_room = max(candidates, key=below).id
-        return True
+        return previous is not None
 
     def _check_source_available(
         self, now: datetime, configured: bool, source_on: bool | None
