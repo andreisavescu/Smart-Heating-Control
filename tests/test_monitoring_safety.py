@@ -75,7 +75,7 @@ class TestMonitoringSafety(unittest.TestCase):
         boiler = method("house.py", "House", "_async_control_boiler")
         self.assertFalse(calls_named(boiler, "async_call"))
 
-    def test_room_heat_demand_reads_the_real_relay_state(self) -> None:
+    def test_room_heat_demand_reads_entity_availability(self) -> None:
         demand = method("room.py", "Room", "_update_demand")
         called = {
             node.func.attr
@@ -84,6 +84,26 @@ class TestMonitoringSafety(unittest.TestCase):
         }
         self.assertIn("_relay_actual", called)
         self.assertIn("_note_relay_state", called)
+
+    def test_any_available_demand_entity_means_demand(self) -> None:
+        actual = method("room_devices.py", "RoomDevices", "_relay_actual")
+        returns = [
+            node.value
+            for node in ast.walk(actual)
+            if isinstance(node, ast.Return)
+        ]
+        self.assertTrue(
+            any(
+                isinstance(value, ast.Constant) and value.value is True
+                for value in returns
+            )
+        )
+        self.assertTrue(
+            any(
+                isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not)
+                for node in ast.walk(actual)
+            )
+        )
 
     def test_keep_open_output_feature_is_disabled(self) -> None:
         keep_open = method("house.py", "House", "_update_keep_open")
